@@ -32,6 +32,8 @@ parser.add_argument('--weight', type=float, default=1., help='=loss weight')
 
 args = parser.parse_args()
 
+torch.cuda.set_device(1)
+
 torch.use_deterministic_algorithms(True)
 acc_log = open(args.exp_name, 'a')
 torch.manual_seed(args.seed)
@@ -94,6 +96,9 @@ def train_step(h36m_motion_input, h36m_motion_target, model, optimizer, nb_iter,
     else:
         motion_pred = motion_pred[:, :config.motion.h36m_target_length]
 
+    motion_pred = motion_pred[:, :, :29*3]
+    h36m_motion_target = h36m_motion_target[:, :, :29*3]
+
     b,n,c = h36m_motion_target.shape
     motion_pred = motion_pred.reshape(b,n,29,3).reshape(-1,3)
     h36m_motion_target = h36m_motion_target.cuda().reshape(b,n,29,3).reshape(-1,3)
@@ -124,7 +129,7 @@ model.train()
 model.cuda()
 
 config.motion.h36m_target_length = config.motion.h36m_target_length_train
-dataset = SittingDataset(person_seqs, kitchens, ["A", "B", "C"], config.motion.h36m_input_length, config.motion.h36m_target_length)
+dataset = SittingDataset(person_seqs, kitchens, ["A", "B", "C"], config.motion.h36m_input_length, config.motion.h36m_target_length, encode_objects=True)
 
 shuffle = True
 sampler = None

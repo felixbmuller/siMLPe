@@ -54,3 +54,9 @@ coverage.xml
 docs/_build/
 
 __pycache__/
+
+*.pth
+*.png
+*.mp4
+*.pkl
+events.out.tfevents.*

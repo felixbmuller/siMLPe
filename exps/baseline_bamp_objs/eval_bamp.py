@@ -2,7 +2,6 @@ import argparse
 from genericpath import isfile
 import os, sys
 from pathlib import Path
-from bamp.data.object_encoding_dir import encode_objects_direction
 from einops import rearrange
 from scipy.spatial.transform import Rotation as R
 
@@ -51,16 +50,6 @@ def create_callback_fn(model):
         motion_input = rearrange(data["Poses3d_in"][-50:], "t b j d -> b t (j d)")
         motion_input = torch.from_numpy(motion_input).cuda()
 
-        objs = encode_objects_direction(
-            rearrange(data["Poses3d_in"][-50:], "t b j d -> 1 b t j d"), 
-            rearrange(data["Masks_in"], "t b -> 1 b t"),
-            [data["frames_in"][0]],
-            data["kitchen"])
-        
-        objs = rearrange(objs, "1 b t j d -> b t (j d)")
-        
-        motion_input = np.concatenate([motion_input, objs], axis=-1)
-
         outputs = []
         step = 10*25
         num_step = 5
@@ -75,6 +64,8 @@ def create_callback_fn(model):
                 output = torch.matmul(idct_m[:, :config.motion.h36m_input_length, :], output)[:, :step, :]
                 if config.deriv_output:
                     output = output + motion_input[:, -1:, :].repeat(1,50,1)
+
+                output = output[:, :, :29*3]
 
             outputs.append(output)
             motion_input = output
